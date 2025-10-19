@@ -10,6 +10,14 @@ const bookingApi = baseApi.injectEndpoints({
             transformResponse: (response: any) => response.data,
             providesTags: ['Booking']
         }),
+        getMyBookings: builder.query({
+            query: () => ({
+                url: '/bookings/my-bookings',
+                method: 'GET',
+            }),
+            transformResponse: (response: any) => response.data,
+            providesTags: ['Booking']
+        }),
         updateBookingStatus: builder.mutation({
             query: ({id, status}: { id: string; status: string }) => ({
                 url: `/bookings/${id}`,
@@ -21,4 +29,4 @@ const bookingApi = baseApi.injectEndpoints({
     })
 })
 
-export const { useGetAllBookingsQuery, useUpdateBookingStatusMutation } = bookingApi
+export const { useGetAllBookingsQuery, useUpdateBookingStatusMutation, useGetMyBookingsQuery } = bookingApi
