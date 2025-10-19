@@ -1,7 +1,7 @@
 # Project Title: Gym Management System
 ## Live Demo
 
-You can access the live version of the project here: [Live Link](https://gym-management-ecru.vercel.app/)
+You can access the live version of the project here: [Live Demo](https://gym360bd.vercel.app/)
 
 ## Admin Credentials
 
@@ -20,7 +20,7 @@ Here is the ER diagram of the project to help visualize the database structure.
 
 1. Clone the repository:
     ```bash
-    git clone https://github.com/Nasir1290/gym-client.git
+    git clone https://github.com/apucsd/gym-frontend
     ```
 3. Install dependencies:
     ```bash
@@ -51,4 +51,4 @@ For any inquiries, feel free to contact:
 
 ---
 
-Made with ❤️ by [Nasir Mollah](https://nasirmollah.vercel.app)
+Made with ❤️ by [Apu Sutra Dhar](https://apusutradhar.vercel.app)

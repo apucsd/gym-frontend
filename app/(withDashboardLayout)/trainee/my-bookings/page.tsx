@@ -60,7 +60,7 @@ const TraineeMyClasses = () => {
       dataIndex: "status",
       key: "status",
       render: (status) => {
-        let color =
+        const color =
           status === "BOOKED"
             ? "blue"
             : status === "COMPLETED"
