@@ -1,10 +1,9 @@
 "use client";
 
-import { useState } from "react";
-import { Table, Tag, Button, Space, Popconfirm, message } from "antd";
+import { Table, Tag} from "antd";
 import type { ColumnsType } from "antd/es/table";
 import dayjs from "dayjs";
-import { useGetMyBookingsQuery, useUpdateBookingStatusMutation } from "@/redux/features/booking/bookingApi";
+import { useGetMyBookingsQuery } from "@/redux/features/booking/bookingApi";
 
 interface Trainer {
   _id: string;
@@ -30,7 +29,6 @@ interface Booking {
 const TraineeMyClasses = () => {
 
   const {data: bookingData, isLoading} = useGetMyBookingsQuery([])
-  const [updateBookingStatus] = useUpdateBookingStatusMutation()
 
 
 

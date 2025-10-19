@@ -1,52 +1,46 @@
 "use client"
 import { useState } from 'react';
-import { useCreateUserMutation } from '@/redux/features/api/authApi';
 import Link from 'next/link';
-import toast from 'react-hot-toast'; // For toast notifications
 import { useRouter } from 'next/navigation'; // For navigation after success
+import { useAddUserMutation } from '@/redux/features/user/userApi';
+import { message } from 'antd';
 
 
 export default function SignupPage() {
-    const [ createUser ] = useCreateUserMutation(); // Mutation hook to register user
-    const router = useRouter(); // To navigate after successful registration
+    const [ createUser , { isLoading }] = useAddUserMutation();
+    const router = useRouter(); 
 
-    // Use a single state object to store form fields
+
     const [ formData, setFormData ] = useState({
         name: '',
         email: '',
         password: '',
-        role:"TRAINEE"
+        role:"TRAINEE",
+        verified: true
     });
 
-    // Destructure formData for easy access
     const { name, email, password } = formData;
-
-    // Handle input changes
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
         setFormData({
-            ...formData, // Spread the previous state
-            [ name ]: value, // Update the changed field
+            ...formData,
+            [ name ]: value,
         });
     };
-
-    // Handle form submission
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const handleSubmit = async (event: any) => {
         event.preventDefault(); // Prevent default form submission behavior
+        // console.log(formData)
 
         try {
             const response = await createUser(formData).unwrap();
-            // Call the mutation with form data
             console.log(response)
-            // If registration is successful
             if (response.success) {
-                toast.success(response.message); // Show success notification
-                router.push('/auth/login'); // Redirect to login page
+                message.success(response.message || "User created successfully");
+                router.push('/auth/login');
             }
-        } catch (error) {
-            // Handle error (e.g., if email is already taken)
-            toast.error('Registration failed. Please try again.');
+        } catch (error:any) {
+            message.error(error?.data?.message || 'Registration failed. Please try again.');
             console.log(error);
         }
     };
@@ -88,7 +82,7 @@ export default function SignupPage() {
                             required
                             value={email} // Access formData.email
                             onChange={handleInputChange} // Single handler for all inputs
-                            className="rounded-lg block w-full px-3 py-2 bg-gray-800 text-black placeholder-gray-400 focus:ring-primary border-4 border-primary"
+                            className="rounded-lg block w-full px-3 py-2 text-black placeholder-gray-400 focus:ring-primary border-4 border-primary"
                             placeholder="Email address"
                         />
                     </div>
@@ -104,7 +98,7 @@ export default function SignupPage() {
                             required
                             value={password} // Access formData.password
                             onChange={handleInputChange} // Single handler for all inputs
-                            className="rounded-lg block w-full px-3 py-2 bg-gray-800 text-black placeholder-gray-400 focus:ring-primary border-4 border-primary"
+                            className="rounded-lg block w-full px-3 py-2 text-black placeholder-gray-400 focus:ring-primary border-4 border-primary"
                             placeholder="Password"
                         />
                     </div>
@@ -123,7 +117,7 @@ export default function SignupPage() {
                             type="submit"
                             className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-black bg-primary hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-400"
                         >
-                            Sign Up
+                           {isLoading ? 'Loading...' : 'Sign Up'}
                         </button>
                     </div>
                 </form>

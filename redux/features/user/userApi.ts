@@ -8,7 +8,6 @@ const userApi = baseApi.injectEndpoints({
                 method: 'POST',
                 body: data,
             }),
-            transformResponse: (response: any) => response.data,
             invalidatesTags: ['User']
         }),
         updateUser: builder.mutation({
@@ -17,7 +16,6 @@ const userApi = baseApi.injectEndpoints({
                 method: 'PATCH',
                 body: data,
             }),
-            transformResponse: (response: any) => response.data,
             invalidatesTags: ['User']
         }),
         getAllUsers: builder.query({

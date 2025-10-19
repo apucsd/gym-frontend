@@ -61,7 +61,7 @@ const UserManagementPage = () => {
       onFilter: (value, record) => record.status === value,
       render: (status: string) => (
         <Tag color={status === 'active' ? 'green' : 'red'}>
-          {status.toUpperCase()}
+          {status?.toUpperCase()}
         </Tag>
       ),
     },

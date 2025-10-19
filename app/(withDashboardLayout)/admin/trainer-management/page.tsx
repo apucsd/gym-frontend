@@ -51,7 +51,7 @@ const TraineeManagementPage = () => {
       key: 'status',
       render: (status: string) => (
         <Tag color={status === 'active' ? 'green' : 'red'}>
-          {status.toUpperCase()}
+          {status?.toUpperCase()}
         </Tag>
       ),
       filters: [

@@ -25,8 +25,16 @@ const bookingApi = baseApi.injectEndpoints({
                 body: { status },
             }),
             invalidatesTags: ['Booking']
+        }),
+        bookClass: builder.mutation({
+            query: (data) => ({
+                url: `/bookings`,
+                method: 'POST',
+                body: data
+            }),
+            invalidatesTags: ['Booking']
         })
     })
 })
 
-export const { useGetAllBookingsQuery, useUpdateBookingStatusMutation, useGetMyBookingsQuery } = bookingApi
+export const { useGetAllBookingsQuery, useUpdateBookingStatusMutation, useGetMyBookingsQuery, useBookClassMutation } = bookingApi

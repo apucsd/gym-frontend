@@ -124,6 +124,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
   return (
     <Layout className="min-h-screen">
       <Sider
+      theme="light"
         trigger={null}
         collapsible
         collapsed={collapsed}
@@ -144,7 +145,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
           </h1>
         </div>
         <Menu
-          theme="dark"
+          theme="light"
           mode="inline"
           defaultSelectedKeys={[pathname]}
           selectedKeys={[pathname]}
