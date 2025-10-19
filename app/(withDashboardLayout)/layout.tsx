@@ -17,8 +17,9 @@ import {
 } from '@ant-design/icons';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useAppSelector } from '@/redux/hooks';
+import { useAppDispatch, useAppSelector } from '@/redux/hooks';
 import { RootState } from '@/redux/store';
+import { logout } from '@/redux/features/auth/authSlice';
 
 const { Header, Sider, Content } = Layout;
 const { Text } = Typography;
@@ -50,6 +51,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
     token: { colorBgContainer },
   } = theme.useToken();
 
+  const dispatch = useAppDispatch();
   const {user} = useAppSelector((state: RootState) => state.auth);
 
   useEffect(() => {
@@ -112,7 +114,9 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
       icon: <LogoutOutlined />,
       onClick: () => {
         // Handle logout
-        router.push('/login');
+
+        dispatch(logout());
+        router.push('/');
       },
     },
   ];

@@ -77,15 +77,16 @@ const TraineeManagementPage = () => {
         name: values.name,
         email: values.email,
         password: values.password,
-        role: 'TRAINER' as const
+        role: 'TRAINER' as const,
+        verified: true,
       };
 
       const res = await createUser(traineeData).unwrap()
       if(res.success){
         form.resetFields();
-        setIsModalOpen(false);
         message.success(res.message || 'Trainee registered successfully');
       }
+      setIsModalOpen(false);
 
     } catch (error:any) {
       console.error('Error registering trainee:', error);
@@ -102,9 +103,9 @@ const TraineeManagementPage = () => {
       // For demo, remove from local state
   
       message.success('Trainee deleted successfully');
-    } catch (error) {
-      console.error('Error deleting trainee:', error);
-      message.error('Failed to delete trainee');
+    } catch (error:any) {
+      console.error('Error deleting trainee:', error?.data?.message);
+      message.error(error?.data?.message || 'Failed to delete trainee');
     }
   };
 
