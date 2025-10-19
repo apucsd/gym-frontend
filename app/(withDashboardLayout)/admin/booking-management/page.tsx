@@ -1,9 +1,9 @@
 'use client';
 
-import { useState } from 'react';
 import { Table, Button, Space, Tag, message, Select } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import dayjs from 'dayjs';
+import { useGetAllBookingsQuery, useUpdateBookingStatusMutation } from '@/redux/features/booking/bookingApi';
 
 const { Option } = Select;
 
@@ -16,7 +16,7 @@ interface TraineeType {
 interface ScheduleType {
   _id: string;
   title: string;
-  trainer: string;
+  trainer: any;
   date: string;
   startTime: string;
   endTime: string;
@@ -32,44 +32,19 @@ interface BookingType {
 
 const BookingManagementPage = () => {
   // Mock bookings
-  const [bookings, setBookings] = useState<BookingType[]>([
-    {
-      _id: '1',
-      trainee: { _id: '68f36a23b9d8f49321f14e90', name: 'Alice Johnson', email: 'alice@email.com' },
-      schedule: {
-        _id: '68f369b7b9d8f49321f14e8e',
-        title: 'Yoga Basics',
-        trainer: 'John Doe',
-        date: '2025-10-20',
-        startTime: '09:00',
-        endTime: '11:00',
-      },
-      status: 'BOOKED',
-      bookedAt: '2025-10-18T14:25:41.762Z',
-    },
-    {
-      _id: '2',
-      trainee: { _id: '68f36a23b9d8f49321f14e91', name: 'Robert Brown', email: 'robert@email.com' },
-      schedule: {
-        _id: '68f369b7b9d8f49321f14e8f',
-        title: 'HIIT Training',
-        trainer: 'Jane Smith',
-        date: '2025-10-21',
-        startTime: '13:00',
-        endTime: '15:00',
-      },
-      status: 'CANCELLED',
-      bookedAt: '2025-10-17T09:10:22.110Z',
-    },
-  ]);
+  const { data: bookingData, isLoading } = useGetAllBookingsQuery([]);
+  const [updateBookingStatus] = useUpdateBookingStatusMutation();
 
-  const handleChangeStatus = (bookingId: string, newStatus: BookingType['status']) => {
-    setBookings((prev) =>
-      prev.map((b) =>
-        b._id === bookingId ? { ...b, status: newStatus } : b
-      )
-    );
-    message.success(`Booking status updated to ${newStatus}`);
+
+  const handleChangeStatus = async(bookingId: string, newStatus: BookingType['status']) => {
+    try {
+      const res = await updateBookingStatus({ id: bookingId, status: newStatus }).unwrap();
+      if(res.success){
+        message.success(res.message || 'Booking status updated successfully');
+      }
+    } catch (error:any) {
+      message.error(error?.data?.message || 'Failed to update booking status');
+    }
   };
 
   const columns: ColumnsType<BookingType> = [
@@ -79,8 +54,8 @@ const BookingManagementPage = () => {
       key: 'trainee',
       render: (_, record) => (
         <div>
-          <div className="font-medium">{record.trainee.name}</div>
-          <div className="text-xs text-gray-500">{record.trainee.email}</div>
+          <div className="font-medium">{record?.trainee?.name}</div>
+          <div className="text-xs text-gray-500">{record?.trainee?.email}</div>
         </div>
       ),
     },
@@ -93,6 +68,7 @@ const BookingManagementPage = () => {
       title: 'Trainer',
       dataIndex: ['schedule', 'trainer'],
       key: 'trainer',
+      render: (_, record :any) => record?.schedule?.trainer?.name,
     },
     {
       title: 'Date',
@@ -100,12 +76,12 @@ const BookingManagementPage = () => {
       key: 'date',
       render: (date) => dayjs(date).format('YYYY-MM-DD'),
     },
-    {
-      title: 'Time',
-      key: 'time',
-      render: (_, record) =>
-        `${record.schedule.startTime} - ${record.schedule.endTime}`,
-    },
+    // {
+    //   title: 'Time',
+    //   key: 'time',
+    //   render: (_, record) =>
+    //     `${record.schedule.startTime} - ${record.schedule.endTime}`,
+    // },
     {
       title: 'Booked At',
       dataIndex: 'bookedAt',
@@ -152,8 +128,9 @@ const BookingManagementPage = () => {
       </div>
 
       <Table
+        loading={isLoading}
         columns={columns}
-        dataSource={bookings}
+        dataSource={bookingData}
         rowKey="_id"
         pagination={{ pageSize: 10 }}
         scroll={{ x: 'max-content' }}

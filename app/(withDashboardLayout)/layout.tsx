@@ -17,6 +17,8 @@ import {
 } from '@ant-design/icons';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useAppSelector } from '@/redux/hooks';
+import { RootState } from '@/redux/store';
 
 const { Header, Sider, Content } = Layout;
 const { Text } = Typography;
@@ -41,12 +43,20 @@ function getItem(
 
 const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
   const [collapsed, setCollapsed] = useState(false);
-  const [userRole, setUserRole] = useState<string>('TRAINER'); // Default to ADMIN, replace with actual auth logic
+  const [userRole, setUserRole] = useState<string>('');
   const router = useRouter();
   const pathname = usePathname();
   const {
     token: { colorBgContainer },
   } = theme.useToken();
+
+  const {user} = useAppSelector((state: RootState) => state.auth);
+
+  useEffect(() => {
+    if(user){
+      setUserRole(user.role);
+    }
+  }, [user]);
 
   // Get menu items based on user role
   const getMenuItems = (): MenuItem[] => {
@@ -54,7 +64,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
     const adminItems: MenuItem[] = [
       getItem('User Management', '/admin/user-mangement', <TeamOutlined />),
       getItem('Class Management', '/admin/class-management', <FileTextOutlined />),
-      getItem('Trainee Management', '/admin/trainee-management', <FileTextOutlined />),
+      getItem('Trainer Management', '/admin/trainer-management', <FileTextOutlined />),
       getItem('Booking Management', '/admin/booking-management', <FileTextOutlined />),
     ];
 
@@ -69,6 +79,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
 
     switch (userRole) {
       case 'ADMIN':
+      case 'SUPER_ADMIN':
         return adminItems;
       case 'TRAINER':
         return trainerItems;

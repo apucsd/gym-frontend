@@ -12,14 +12,18 @@ import {
   TimePicker,
   DatePicker,
   InputNumber,
-  Tag,
   message,
 } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import dayjs from 'dayjs';
-
-const { Option } = Select;
+import {
+  useAddClassMutation,
+  useDeleteClassMutation,
+  useGetAllClassesQuery,
+  useUpdateClassMutation,
+} from '@/redux/features/class/classApi';
+import { useGetAllTrainersQuery } from '@/redux/features/user/userApi';
 
 interface ScheduleType {
   _id?: string;
@@ -27,51 +31,21 @@ interface ScheduleType {
   date: string;
   startTime: string;
   endTime: string;
-  trainer: string; // trainer ID
+  trainer: string;
   maxTrainees: number;
   status?: 'active' | 'cancelled' | 'completed';
-}
-
-interface Trainer {
-  _id: string;
-  name: string;
 }
 
 const ScheduleManagementPage = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [form] = Form.useForm();
-  const [loading, setLoading] = useState(false);
   const [editingSchedule, setEditingSchedule] = useState<ScheduleType | null>(null);
 
-  // Mock trainers
-  const [trainers] = useState<Trainer[]>([
-    { _id: '68f35923f78c9aa49753be78', name: 'John Doe' },
-    { _id: '68f35923f78c9aa49753be79', name: 'Jane Smith' },
-  ]);
-
-  // Mock schedule data
-  const [schedules, setSchedules] = useState<ScheduleType[]>([
-    {
-      _id: '1',
-      title: 'Zym For All',
-      date: '2025-10-19',
-      startTime: '09:00',
-      endTime: '11:00',
-      trainer: '68f35923f78c9aa49753be78',
-      maxTrainees: 10,
-      status: 'active',
-    },
-    {
-      _id: '2',
-      title: 'HIIT Session',
-      date: '2025-10-20',
-      startTime: '13:00',
-      endTime: '15:00',
-      trainer: '68f35923f78c9aa49753be79',
-      maxTrainees: 15,
-      status: 'active',
-    },
-  ]);
+  const { data: scheduleData, isLoading } = useGetAllClassesQuery([]);
+  const { data: trainerData, isLoading: trainerLoading } = useGetAllTrainersQuery([]);
+  const [addClass, { isLoading: isAddingClass }] = useAddClassMutation();
+  const [updateClass, { isLoading: isUpdatingClass }] = useUpdateClassMutation();
+  const [deleteClass, { isLoading: isDeletingClass }] = useDeleteClassMutation();
 
   // --- Table Columns ---
   const columns: ColumnsType<ScheduleType> = [
@@ -85,7 +59,7 @@ const ScheduleManagementPage = () => {
       dataIndex: 'trainer',
       key: 'trainer',
       render: (trainerId) => {
-        const trainer = trainers.find((t) => t._id === trainerId);
+        const trainer = trainerData?.data?.find((t: any) => t._id === trainerId);
         return trainer ? trainer.name : 'Unknown';
       },
     },
@@ -106,21 +80,22 @@ const ScheduleManagementPage = () => {
       key: 'maxTrainees',
     },
     {
-      title: 'Status',
-      dataIndex: 'status',
-      key: 'status',
-      render: (status) => {
-        let color = status === 'active' ? 'green' : status === 'completed' ? 'blue' : 'red';
-        return <Tag color={color}>{status.toUpperCase()}</Tag>;
-      },
-    },
-    {
       title: 'Action',
       key: 'action',
       render: (_, record) => (
         <Space>
-          <Button type="link" icon={<EditOutlined />} onClick={() => handleEdit(record)} />
-          <Button type="link" danger icon={<DeleteOutlined />} onClick={() => handleDelete(record._id!)} />
+          <Button
+            type="link"
+            icon={<EditOutlined />}
+            onClick={() => handleEdit(record)}
+          />
+          <Button
+            type="link"
+            danger
+            icon={<DeleteOutlined />}
+            loading={isDeletingClass}
+            onClick={() => handleDelete(record._id!)}
+          />
         </Space>
       ),
     },
@@ -138,10 +113,8 @@ const ScheduleManagementPage = () => {
   const handleOk = async () => {
     try {
       const values = await form.validateFields();
-      setLoading(true);
 
-      const newSchedule: ScheduleType = {
-        _id: editingSchedule ? editingSchedule._id : Date.now().toString(),
+      const formattedSchedule: ScheduleType = {
         title: values.title,
         date: values.date.format('YYYY-MM-DD'),
         startTime: values.time[0].format('HH:mm'),
@@ -151,23 +124,22 @@ const ScheduleManagementPage = () => {
         status: 'active',
       };
 
+      let res;
       if (editingSchedule) {
-        setSchedules((prev) =>
-          prev.map((s) => (s._id === editingSchedule._id ? newSchedule : s))
-        );
-        message.success('Schedule updated successfully');
+        // ✅ Update existing class
+        res = await updateClass({ id: editingSchedule._id, data: formattedSchedule }).unwrap();
+        if (res.success) message.success(res.message || 'Schedule updated successfully');
       } else {
-        setSchedules((prev) => [...prev, newSchedule]);
-        message.success('Schedule added successfully');
+        // ✅ Add new class
+        res = await addClass(formattedSchedule).unwrap();
+        if (res.success) message.success(res.message || 'Schedule added successfully');
       }
 
       setIsModalOpen(false);
       form.resetFields();
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      message.error('Failed to submit schedule');
-    } finally {
-      setLoading(false);
+      message.error(err?.data?.message || 'Failed to submit schedule');
     }
   };
 
@@ -183,25 +155,45 @@ const ScheduleManagementPage = () => {
     setIsModalOpen(true);
   };
 
-  const handleDelete = (id: string) => {
-    setSchedules((prev) => prev.filter((s) => s._id !== id));
-    message.success('Schedule deleted successfully');
+  const handleDelete = async (id: string) => {
+    Modal.confirm({
+      title: 'Are you sure you want to delete this schedule?',
+      okText: 'Yes, Delete',
+      okType: 'danger',
+      cancelText: 'Cancel',
+      async onOk() {
+        try {
+          const res = await deleteClass(id).unwrap();
+          if (res.success) {
+            message.success(res.message || 'Schedule deleted successfully');
+          }
+        } catch (err: any) {
+          console.error(err);
+          message.error(err?.data?.message || 'Failed to delete schedule');
+        }
+      },
+    });
   };
 
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Schedule Management</h1>
-        <Button type="primary" icon={<PlusOutlined />} onClick={showModal}>
+        <Button
+          type="primary"
+          icon={<PlusOutlined />}
+          onClick={showModal}
+        >
           Add New Schedule
         </Button>
       </div>
 
       <Table
         columns={columns}
-        dataSource={schedules}
+        dataSource={scheduleData || []}
         rowKey="_id"
         pagination={{ pageSize: 10 }}
+        loading={isLoading}
         scroll={{ x: 'max-content' }}
       />
 
@@ -210,8 +202,8 @@ const ScheduleManagementPage = () => {
         open={isModalOpen}
         onOk={handleOk}
         onCancel={handleCancel}
-        confirmLoading={loading}
         width={600}
+        confirmLoading={isAddingClass || isUpdatingClass}
       >
         <Form form={form} layout="vertical">
           <Form.Item
@@ -227,11 +219,14 @@ const ScheduleManagementPage = () => {
             label="Trainer"
             rules={[{ required: true, message: 'Please select a trainer' }]}
           >
-            <Select placeholder="Select trainer">
-              {trainers.map((t) => (
-                <Option key={t._id} value={t._id}>
+            <Select
+              loading={trainerLoading}
+              placeholder="Select trainer"
+            >
+              {trainerData?.data?.map((t: any) => (
+                <Select.Option key={t._id} value={t._id}>
                   {t.name}
-                </Option>
+                </Select.Option>
               ))}
             </Select>
           </Form.Item>

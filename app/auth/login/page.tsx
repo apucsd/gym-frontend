@@ -2,15 +2,15 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useLoginUserMutation } from "@/redux/features/api/authApi";
 import toast from "react-hot-toast";
 import { useRouter } from "next/navigation";
 import { useDispatch } from "react-redux";
-import { setUser } from "@/redux/features/slices/authSlice";
 import { jwtDecode } from "jwt-decode";
+import { useLoginUserMutation } from "@/redux/features/auth/authApi";
+import { setUser } from "@/redux/features/auth/authSlice";
 
 export default function LoginPage() {
-  const [loginUser] = useLoginUserMutation();
+  const [loginUser, { isLoading }] = useLoginUserMutation();
   const router = useRouter();
   const dispatch = useDispatch(); // To dispatch actions to the Redux store
   const [email, setEmail] = useState("superadmin@gmail.com");
@@ -26,21 +26,12 @@ export default function LoginPage() {
       };
       const res = await loginUser(loginData).unwrap();
       console.log(res);
-
-      if (res.success) {
-        toast.success(res.message);
-
-        // Save token and user info to localStorage
-        const token = res.data.accessToken;
-        const decodedUserInformation = jwtDecode(token);
-        localStorage.setItem("user", JSON.stringify(decodedUserInformation)); // Save user info as string
-        localStorage.setItem("token", res.data.accessToken);
-
-        // Dispatch user info to Redux store
-        dispatch(setUser({ user: decodedUserInformation }));
-
-        router.push("/");
-      }
+      if (res?.success) {
+        const user = jwtDecode(res?.data?.accessToken);
+        dispatch(setUser({ user, token: res?.data?.accessToken }));
+        toast.success(res?.message);
+        router.push(`/`);
+  }
     } catch (error) {
       console.log(error);
       toast.error("Invalid information !");
@@ -116,7 +107,7 @@ export default function LoginPage() {
               type="submit"
               className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-black bg-primary hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-400"
             >
-              Login
+             {isLoading ? "Loading..." : "Login"}
             </button>
           </div>
         </form>

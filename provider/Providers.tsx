@@ -1,13 +1,15 @@
 'use client'
-import { store } from '@/redux/store'
+import { persistor, store } from '@/redux/store'
 import { ConfigProvider } from 'antd'
 import React, { ReactNode } from 'react'
 import { Toaster } from 'react-hot-toast'
 import { Provider } from 'react-redux'
+import { PersistGate } from 'redux-persist/integration/react'
 
 export default function Providers({children}:{children:ReactNode}) {
   return (
     <Provider store={store}>
+      <PersistGate loading={null} persistor={persistor}>
       <ConfigProvider theme={{
         token: {
           colorPrimary: '#1890ff',
@@ -41,6 +43,7 @@ export default function Providers({children}:{children:ReactNode}) {
       {children}
       <Toaster position='top-right' />
       </ConfigProvider>
+      </PersistGate>
     </Provider>
   )
 }

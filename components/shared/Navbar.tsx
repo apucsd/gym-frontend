@@ -4,8 +4,10 @@ import { GiHamburgerMenu } from "react-icons/gi";
 import { FaSignOutAlt, FaDumbbell } from "react-icons/fa";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
-import axios from "axios";
 import { useRouter } from "next/navigation";
+import { useAppDispatch, useAppSelector } from "@/redux/hooks";
+import { RootState } from "@/redux/store";
+import { logout } from "@/redux/features/auth/authSlice";
 
 const menuVariants = {
   hidden: { opacity: 0, y: -20 },
@@ -23,24 +25,13 @@ const linkVariants = {
 
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [userRole, setUserRole] = useState<string | null>(null);
+  const dipatch = useAppDispatch()
+
   const router = useRouter();
+  const {user} = useAppSelector((state: RootState) => state.auth);
 
-  useEffect(() => {
-    // simulate API call
-    async function dummy() {
-      try {
-        await axios.get("https://gym-server-menagement.onrender.com/api/v1/users/get-user/TRAINEE");
-      } catch (err) {}
-    }
-    dummy();
+  console.log(user)
 
-    const userInfo = localStorage?.getItem("user");
-    if (userInfo) {
-      const user = JSON.parse(userInfo);
-      setUserRole(user.role);
-    }
-  }, []);
 
   const menuItems = [
     { key: "Home", path: "/" },
@@ -50,10 +41,9 @@ export default function Navbar() {
   ];
 
   const handleLogout = () => {
-    router.push("/");
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-    setUserRole(null);
+    dipatch(logout())
+    router.push("/")
+    
   };
 
   return (
@@ -91,15 +81,17 @@ export default function Navbar() {
 
         {/* Right Side Buttons */}
         <div className="hidden md:flex items-center gap-4">
-          {userRole ? (
+          {user ? (
             <>
               <Link
-                href={`/dashboard/${
-                  userRole === "TRAINEE"
-                    ? "trainee"
-                    : userRole === "TRAINER"
-                    ? "trainer"
-                    : "admin"
+                href={`/${
+                  user.role === "ADMIN" || user.role === "SUPER_ADMIN"
+                    ? "admin/user-mangement"
+                    : user.role === "TRAINER"
+                    ? "trainer/my-classes"
+                    : user.role === "TRAINEE"
+                    ? "trainee/my-bookings"
+                    : ""
                 }`}
                 className="bg-yellow-400 text-black font-semibold px-4 py-2 rounded-md hover:bg-yellow-300 transition"
               >
@@ -153,15 +145,17 @@ export default function Navbar() {
             ))}
 
             <div className="flex justify-center gap-3 pt-2">
-              {userRole ? (
+              {user ? (
                 <>
                   <Link
                     href={`/dashboard/${
-                      userRole === "TRAINEE"
+                      user.role === "TRAINEE"
                         ? "trainee"
-                        : userRole === "TRAINER"
+                        : user.role === "TRAINER"
                         ? "trainer"
-                        : "admin"
+                        : user.role === "ADMIN" || user.role === "SUPER_ADMIN"
+                        ? "admin"
+                        : ""
                     }`}
                     className="bg-yellow-400 text-black px-5 py-2 rounded font-semibold"
                     onClick={() => setIsMenuOpen(false)}

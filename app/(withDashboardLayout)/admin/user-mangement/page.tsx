@@ -1,9 +1,9 @@
 'use client';
 
-import { useState } from 'react';
-import { Button, Table, Space, Select, Tag, message } from 'antd';
-import { EditOutlined, DeleteOutlined } from '@ant-design/icons';
+import { Button, Table, Space, Tag, message } from 'antd';
+import { DeleteOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
+import { useGetAllUsersQuery } from '@/redux/features/user/userApi';
 
 
 interface UserType {
@@ -15,28 +15,11 @@ interface UserType {
 }
 
 const UserManagementPage = () => {
+  const { data: userData, isLoading } = useGetAllUsersQuery([]);
+  console.log(userData);
   
   
-  // Mock data - replace with API call
-  const [users, setUsers] = useState<UserType[]>([{
-    _id: '1',
-    name: 'John Doe',
-    email: 'john@example.com',
-    role: 'ADMIN',
-    status: 'active'
-  }, {
-    _id: '2',
-    name: 'Jane Smith',
-    email: 'jane@example.com',
-    role: 'TRAINER',
-    status: 'active'
-  }, {
-    _id: '3',
-    name: 'Mike Johnson',
-    email: 'mike@example.com',
-    role: 'TRAINEE',
-    status: 'inactive'
-  }]);
+
 
   const columns: ColumnsType<UserType> = [
     {
@@ -82,21 +65,7 @@ const UserManagementPage = () => {
         </Tag>
       ),
     },
-    {
-      title: 'Action',
-      key: 'action',
-      render: (_, record) => (
-        <Space size="middle">
-        
-          <Button 
-            type="link" 
-            danger 
-            icon={<DeleteOutlined />} 
-            onClick={() => handleDelete(record._id)} 
-          />
-        </Space>
-      ),
-    },
+    
   ];
 
 
@@ -104,19 +73,6 @@ const UserManagementPage = () => {
 
 
 
-  const handleDelete = async (id: string) => {
-    try {
-      // In a real app, you would call your API here
-      // await api.deleteUser(id);
-      
-      // For demo, just remove from local state
-      setUsers(users.filter(user => user._id !== id));
-      message.success('User deleted successfully');
-    } catch (error) {
-      console.error('Error deleting user:', error);
-      message.error('Failed to delete user');
-    }
-  };
 
   return (
     <div className="p-6">
@@ -126,8 +82,9 @@ const UserManagementPage = () => {
       </div>
 
       <Table
+      loading={isLoading}
         columns={columns}
-        dataSource={users}
+        dataSource={userData?.data}
         rowKey="_id"
         pagination={{ pageSize: 10 }}
         scroll={{ x: 'max-content' }}

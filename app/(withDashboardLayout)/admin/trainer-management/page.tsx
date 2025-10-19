@@ -9,10 +9,9 @@ import {
   EditOutlined, 
   DeleteOutlined,
   PlusOutlined,
-  SearchOutlined
 } from '@ant-design/icons';
-import { useRouter } from 'next/navigation';
 import type { ColumnsType } from 'antd/es/table';
+import { useAddUserMutation, useGetAllTrainersQuery } from '@/redux/features/user/userApi';
 
 interface TraineeType {
   _id: string;
@@ -25,51 +24,14 @@ interface TraineeType {
 
 const TraineeManagementPage = () => {
   const [form] = Form.useForm();
-  const [loading, setLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [trainees, setTrainees] = useState<TraineeType[]>([]);
-  const [searchText, setSearchText] = useState('');
-  const router = useRouter();
+  const {data:trainerData, isLoading} = useGetAllTrainersQuery([])
+  const [createUser, {isLoading: isCreatingUser}] = useAddUserMutation()
 
-  // Mock data - replace with API call
-  useEffect(() => {
-    const fetchTrainees = async () => {
-      try {
-        setLoading(true);
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 500));
-        
-        // Mock data
-        const mockTrainees: TraineeType[] = [
-          {
-            _id: '1',
-            name: 'John Doe',
-            email: 'john@example.com',
-            role: 'TRAINEE',
-            status: 'active',
-            createdAt: '2025-10-15T10:30:00Z'
-          },
-          {
-            _id: '2',
-            name: 'Jane Smith',
-            email: 'jane@example.com',
-            role: 'TRAINEE',
-            status: 'inactive',
-            createdAt: '2025-10-16T14:20:00Z'
-          }
-        ];
-        
-        setTrainees(mockTrainees);
-      } catch (error) {
-        console.error('Error fetching trainees:', error);
-        message.error('Failed to load trainees');
-      } finally {
-        setLoading(false);
-      }
-    };
 
-    fetchTrainees();
-  }, []);
+
+
+
 
   const columns: ColumnsType<TraineeType> = [
     {
@@ -105,77 +67,32 @@ const TraineeManagementPage = () => {
       render: (date: string) => new Date(date).toLocaleDateString(),
       sorter: (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
     },
-    {
-      title: 'Action',
-      key: 'action',
-      render: (_, record) => (
-        <Space size="middle">
-          <Button 
-            type="text" 
-            icon={<EditOutlined />} 
-            onClick={() => handleEdit(record)}
-          />
-          <Button 
-            type="text" 
-            danger 
-            icon={<DeleteOutlined />} 
-            onClick={() => handleDelete(record._id)}
-          />
-        </Space>
-      ),
-    },
+    
   ];
 
   const onFinish = async (values: any) => {
     try {
-      setLoading(true);
       
       const traineeData = {
         name: values.name,
         email: values.email,
         password: values.password,
-        role: 'TRAINEE' as const
+        role: 'TRAINER' as const
       };
 
-      console.log('Registering trainee:', traineeData);
-      
-      // In a real app, you would call your API here
-      // const response = await fetch('/api/trainees', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify(traineeData),
-      // });
-      // const data = await response.json();
-      
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // For demo, add to local state
-      const newTrainee = {
-        ...traineeData,
-        _id: Date.now().toString(),
-        status: 'active' as const,
-        createdAt: new Date().toISOString()
-      };
-      
-      setTrainees([...trainees, newTrainee]);
-      
-      message.success('Trainee registered successfully');
-      form.resetFields();
-      setIsModalOpen(false);
-      
-    } catch (error) {
+      const res = await createUser(traineeData).unwrap()
+      if(res.success){
+        form.resetFields();
+        setIsModalOpen(false);
+        message.success(res.message || 'Trainee registered successfully');
+      }
+
+    } catch (error:any) {
       console.error('Error registering trainee:', error);
-      message.error('Failed to register trainee');
-    } finally {
-      setLoading(false);
-    }
+      message.error(error?.data?.message || 'Failed to register trainee');
+    } 
   };
 
-  const handleEdit = (record: TraineeType) => {
-    // Implement edit functionality
-    message.info('Edit functionality to be implemented');
-  };
 
   const handleDelete = async (id: string) => {
     try {
@@ -183,7 +100,7 @@ const TraineeManagementPage = () => {
       // await fetch(`/api/trainees/${id}`, { method: 'DELETE' });
       
       // For demo, remove from local state
-      setTrainees(trainees.filter(trainee => trainee._id !== id));
+  
       message.success('Trainee deleted successfully');
     } catch (error) {
       console.error('Error deleting trainee:', error);
@@ -191,22 +108,18 @@ const TraineeManagementPage = () => {
     }
   };
 
-  const filteredTrainees = trainees.filter(
-    trainee =>
-      trainee.name.toLowerCase().includes(searchText.toLowerCase()) ||
-      trainee.email.toLowerCase().includes(searchText.toLowerCase())
-  );
+
 
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Trainee Management</h1>
+        <h1 className="text-2xl font-bold">Trainer Management</h1>
         <Button
           type="primary"
           icon={<PlusOutlined />}
           onClick={() => setIsModalOpen(true)}
         >
-          Add New Trainee
+          Add New Trainer
         </Button>
       </div>
 
@@ -214,15 +127,15 @@ const TraineeManagementPage = () => {
 
       <Table
         columns={columns}
-        dataSource={filteredTrainees}
+        dataSource={trainerData?.data}
         rowKey="_id"
-        loading={loading}
+        loading={isLoading}
         pagination={{ pageSize: 10 }}
         scroll={{ x: 'max-content' }}
       />
 
       <Modal
-        title="Register New Trainee"
+        title="Register New Trainer"
         open={isModalOpen}
         onCancel={() => {
           setIsModalOpen(false);
@@ -308,11 +221,11 @@ const TraineeManagementPage = () => {
             <Button 
               type="primary" 
               htmlType="submit" 
-              loading={loading}
+              loading={isCreatingUser}
               className="w-full"
               size="large"
             >
-              Register Trainee
+              Register Trainer
             </Button>
           </Form.Item>
         </Form>
